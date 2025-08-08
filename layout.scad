@@ -1,10 +1,13 @@
 include <BOSL2/std.scad>
 
+$fn = 100;
 function applyM(M, points) =
   transpose(M * transpose(points));
 
 u = [1, 0];
 v = [0.3, 1];
+
+xi = [0.4, 0.2];
 
 shape = move([-EPSILON, -EPSILON], rect([20, 10]));
 UV = hstack(u, v);
@@ -26,6 +29,15 @@ uvs = [
 ];
 xys = uv_xy(uvs);
 
+uvtile = let (X = [1, 0], Y = [0, 1])
+  [xi, X - xi, xi - Y, -xi, xi - X, Y - xi];
+xytile = uv_xy(uvtile);
+
 for(xy = xys)
-  translate(xy)
-    circle(d = 0.5);
+  translate(xy) {
+    color("red")
+      circle(d = 0.1);
+    scale(0.95)
+      region(xytile);
+  }
+

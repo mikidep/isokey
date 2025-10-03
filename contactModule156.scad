@@ -60,7 +60,8 @@ module contactPos() {
     }
 }
 
-difference() {
-  contactPos();
-  contactHole();
-}
+contact();
+// difference() {
+//   contactPos();
+//   contactHole();
+// }

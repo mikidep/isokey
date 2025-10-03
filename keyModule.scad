@@ -1,5 +1,7 @@
 include <prelude.scad>
 use <contactModule156.scad>
+include <./jl_scad/box.scad>
+include <./jl_scad/parts.scad>
 
 module keyholeCutout() {
   back(5.9)
@@ -34,4 +36,14 @@ module key_module() difference() {
       keyholeCutout();
 }
 
-key_module();
+module key_part() {
+
+  box_half(TOP)
+    box_pos()
+      box_hole(3.2);
+
+//cyl(d = 3.2 + 2 * $slop, h = 4, anchor = TOP);
+//xflip_copy()
+//  left(5.5)
+//    cyl(d = 1.8 + 2 * $slop, h = 4, anchor = TOP);
+}

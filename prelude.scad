@@ -3,13 +3,15 @@ $fn = 20;
 $slop = 0.1;
 EPSILON = 0.001;
 
-HW = 20.96;
-SP = 21.5;
-KBU = 13.8;
-PTH = 2; // Plate thickness
+KKD = 21.5; // Key to key distance
 
-module bbox() intersection() {
-  bounding_box(1) children();
-  scale([ 100, 100, 1 ]) bounding_box() children();
-}
+module debug_pt(pt, clr = "red") translate(pt)
+  color(clr)
+    sphere(r = 1);
 
+
+module debug_pts(pts, clr = "red") for(pt = pts)
+  debug_pt(pt, clr);
+
+function bounds_to_size(bds) =
+  bds[1] - bds[0];

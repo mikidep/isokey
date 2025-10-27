@@ -2,7 +2,10 @@ include <prelude.scad>
 use <./isolayout.scad>
 use <keyModule.scad>
 
-COLS = 12;
+//COLS = 12;
+//ROWS = 6;
+
+COLS = 6;
 ROWS = 6;
 
 u = KKD * [1, 0];

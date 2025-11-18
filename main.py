@@ -10,8 +10,8 @@ from kmk.keys import KC
 from kmk.keys import Key
 from adafruit_midi.note_off import NoteOff
 from adafruit_midi.note_on import NoteOn
-from adafruit_midi.pitch_bend import PitchBend
-from adafruit_midi.program_change import ProgramChange
+from adafruit_midi.cc import NoteOn
+from adafruit_midi.control_change import ControlChange
 from adafruit_midi.start import Start
 from adafruit_midi.stop import Stop
 from kmk.modules import Module
@@ -42,78 +42,53 @@ keyboard.matrix = MatrixScanner(
     interval=0.03,
 )
 
-keyboard.modules.append(Layers())  # enable layer support
+keyboard.modules.append(Layers())
+keyboard.extensions.append(MidiKeys())
 
-midi = MidiKeys()
-keyboard.extensions.append(midi)
-
-TRANSPOSE_DOWN = KC.F12
-LAYER_TOGGLE = KC.TG(1)  # toggles layer 1
-
-transpose = 60  # current semitone offset
+# State
+transpose = 60
+generator_row = 2
+generator_col = 5
+lowest_note = 48
 
 midi_output = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
 
-def key_on_press(key, keyboard, *args, **kwargs):
-    print(key, keyboard)
-    midi_output.send(NoteOn(transpose, 127, channel=None))
-def key_on_release(key, keyboard, *args, **kwargs):
-    print(key, keyboard)
-    midi_output.send(NoteOff(transpose, 127, channel=None))
+def compute_note(row, col):
+    return lowest_note + row * generator_row + col * generator_col
 
-def transpose_on_press(key, keyboard, *args, **kwargs):
-    global transpose
-    print(key, keyboard)
-    transpose += 1
-def transpose_on_release(key, keyboard, *args, **kwargs):
-    pass
-
-def MidiKey(key):
+def MidiKey(row, col):
+    def key_on_press(key, keyboard, *args, **kwargs):
+        midi_output.send(NoteOn(compute_note(row, col), 127, channel=None))
+    def key_on_release(key, keyboard, *args, **kwargs):
+        midi_output.send(NoteOff(compute_note(row, col), 127, channel=None))
     return Key(on_press=key_on_press, on_release=key_on_release)
 
-def TransposeKey(delta):
-    return Key(on_press=transpose_on_press, on_release=transpose_on_release)
+def simple_key_builder(f):
+  def builder(*builder_args):
+    def key_on_press(key, keyboard, *args, **kwargs):
+        f(*builder_args)
+    def key_on_release(key, keyboard, *args, **kwargs):
+        pass
+    return Key(on_press=key_on_press, on_release=key_on_release)
+  return builder
 
-# Build minimal keymap with MIDI notes
-KEYMAP = [
-    # Layer 0: Playing layer (add toggle key in first position)
+SetGeneratorRowKey = simple_key_builder(lambda value: generator_row = value)
+SetGeneratorColKey = simple_key_builder(lambda value: generator_col = value)
+TransposeKey = simple_key_builder(lambda value: transpose += value)
+MidiCC = simple_key_builder(lambda value: midi_output.send(ControlChange(value, channel=None)))
+
+keyboard.keymap = [
     [
-        MidiKey(60), MidiKey(60),  MidiKey(60),  MidiKey(60),MidiKey(60),MidiKey(60),MidiKey(60),MidiKey(60),MidiKey(60),MidiKey(60),MidiKey(60), MidiKey(60), MidiKey(60),MidiKey(60),
-        MidiKey(60), MidiKey(60),  MidiKey(60),  MidiKey(60),MidiKey(60),MidiKey(60),MidiKey(60),MidiKey(60),TransposeKey(1),TransposeKey(1),TransposeKey(1), TransposeKey(1), TransposeKey(1),TransposeKey(1),
-        TransposeKey(1), TransposeKey(1),  TransposeKey(1),  TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1), TransposeKey(1), TransposeKey(1),TransposeKey(1),
-        TransposeKey(1), TransposeKey(1),  TransposeKey(1),  TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1), TransposeKey(1), TransposeKey(1),TransposeKey(1),
-        TransposeKey(1), TransposeKey(1),  TransposeKey(1),  TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1),TransposeKey(1), TransposeKey(1), TransposeKey(1),TransposeKey(1),
+        MidiKey(0, 1), MidiKey(0, 2),  MidiKey(0, 3),
+        MidiKey(1, 1), MidiKey(1, 2),  MidiKey(1, 3),
+        MidiKey(2, 1), MidiKey(2, 2),  KC.MO(1),
     ],
-    # Layer 1: Transposition layer (include toggle so user can exit layer)
     [
-        MidiKey(60),
-        TRANSPOSE_DOWN,
-        KC.NO,
-        KC.NO,
+        TransposeKey(1), TransposeKey(-1), MidiCC(2),
+        SetGeneratorRowKey(1), SetGeneratorRowKey(2), SetGeneratorRowKey(3),
+        SetGeneratorColKey(1), SetGeneratorColKey(2), SetGeneratorColKey(3),
     ],
 ]
-
-keyboard.keymap = KEYMAP
-
-# Intercept MIDI notes and apply transpose
-old_midi_process = midi.process_key
-
-base_note = 60
-
-def midi_with_transpose(key, pressed):
-    global transpose
-    print("asdjij", key, pressed)
-    # Update transpose if transpose keys pressed
-    if pressed:
-        if key == MidiKey(60):
-            transpose += 1
-        elif key == TRANSPOSE_DOWN:
-            transpose -= 1
-    # Apply transpose to MIDI notes right before processing
-    key.note = base_note + transpose
-    return old_midi_process(key, pressed)
-
-midi.process_key = midi_with_transpose
 
 if __name__ == "__main__":
     keyboard.go()

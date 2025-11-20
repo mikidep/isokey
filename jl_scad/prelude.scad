@@ -20,3 +20,4 @@ $box_preview_color = "#77f8";
 $box_inside_overlap = 0.0001;
 
 $box_wall = undef;
+$_matrix = IDENT;

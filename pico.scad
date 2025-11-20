@@ -1,4 +1,7 @@
 include <./prelude.scad>
+use <./jl_scad/box.scad>
+use <./jl_scad/parts.scad>
+include <./jl_scad/prelude.scad>
 
 BW = 21; // Board width (connector side)
 BL = 51; // Board length

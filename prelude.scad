@@ -1,5 +1,6 @@
 include <BOSL2/std.scad>
-$fn = 20;
+$fa = 1;
+$fs = $preview ? 1 : 0.25;
 $slop = 0.1;
 EPSILON = 0.001;
 

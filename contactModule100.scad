@@ -6,36 +6,41 @@ module contact() import("./640636-3.off", convexity = 4);
 
 SHEET_TH = 0.318;
 CONTACT_H = 11.481;
-HOLE_DEPTH = 1.6;
-HOLE_H = 8.7;
-HOLE_W = 2.4;
-HOLE_W2 = 1.8;
-SHELL_TH = 1.2;
+HOLE_DEPTH = 1.8;
+HOLE_H = 7;
+HOLE_H2 = 8.7;
+HOLE_W = 2.6;
+HOLDER_Z = 5.5;
+HOLE_W2 = 1.6;
+SHELL_TH = 0.8;
+
+module contactHoleCore() {
+  module front_piece() cube([HOLE_W2, HOLE_DEPTH, HOLE_H], anchor = TOP + BACK);
+  module back_piece() cube([HOLE_W, 1.5 * SHEET_TH, HOLE_H], anchor = TOP + BACK)
+    position(BOTTOM + BACK)
+      cube([HOLE_W, HOLE_DEPTH, HOLE_H2 - HOLE_H], anchor = TOP + BACK);
+
+  render(convexity = 2)
+    back(2 * SHEET_TH) {
+      front_piece();
+      back_piece();
+      children();
+    }
+}
 
 module contactHole() {
-  module front_piece() cube([HOLE_W2, HOLE_DEPTH, HOLE_H], anchor = TOP + BACK)
-    down(0.01)
-      edge_profile(TOP + FRONT)
-        xflip()
-          mask2d_chamfer(x = 1, y = 2);
-
-  module back_piece() diff()
-    cube([HOLE_W, 1.5 * SHEET_TH, HOLE_H], anchor = TOP + BACK) {
-      edge_profile([TOP + LEFT, TOP + RIGHT], excess = 0.001)
-        let(cd = (HOLE_W - HOLE_W2) / 2)
-          mask2d_chamfer(x = cd, y = 1.5 * cd);
-      up(HOLE_H - 5.5)
-        tag("keep")
-          edge_profile(BOTTOM + BACK)
-            xflip()
-              mask2d_chamfer(x = 0.8, y = 3);
-    }
-  render()
-    back(SHEET_TH) {
-      up(0.001)
-        front_piece();
-      back_piece();
-    }
+  contactHoleCore() {
+    fwd(HOLE_DEPTH - EPSILON)
+      extrude_from_to([-HOLE_W2 / 2, 0, 0], [HOLE_W2 / 2, 0, 0])
+        yflip()
+          right_triangle([2, SHELL_TH]);
+    down(HOLDER_Z)
+      fwd(EPSILON)
+        cube([1, 2 * SHELL_TH, 2.5], anchor = BOT + FRONT);
+  //#down(HOLE_H2 + EPSILON)
+  //  back(SHELL_TH + EPSILON)
+  //    cube([0.7 * HOLE_W, HOLE_DEPTH + 2 * SHELL_TH + 2 * EPSILON, 2.8], anchor = BOT + BACK);
+  }
 }
 
 
@@ -44,19 +49,14 @@ module contactPos() render()
     down(EPSILON)
       minkowski() {
         bounding_box()
-          contactHole();
-        cube([SHELL_TH, SHELL_TH, EPSILON], anchor = TOP);
+          contactHoleCore();
+        cube([2 * SHELL_TH, 2 * SHELL_TH, EPSILON], anchor = TOP);
       }
 
 module contact_trans() back(SHEET_TH)
   down(CONTACT_H)
     xrot(180)
       children();
-
-//contact_trans()
-//  contact();
-
-//#contactHole();
 
 difference() {
   contactPos();

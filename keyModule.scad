@@ -1,15 +1,8 @@
 include <prelude.scad>
 use <contactModule100.scad>
-include <./jl_scad/box.scad>
-include <./jl_scad/parts.scad>
-
-module keyholePos() union() {
-  back(5.9)
-    contactPos();
-  back(3.8)
-    right(5)
-      contactPos();
-}
+use <./jl_scad/box.scad>
+use <./jl_scad/parts.scad>
+include <./jl_scad/prelude.scad>
 
 module contact_part() {
   contactPos();
@@ -18,22 +11,24 @@ module contact_part() {
 }
 
 module custom_hole(d) {
-  p = hexagon(id = d);
+  p = square([d, d], anchor = CENTER);
   box_cutout(p);
 }
 
-module key_part() {
-  box_half(TOP, inside = false) {
-    custom_hole(3.2);
-    xflip_copy()
-      left(5.5)
-        custom_hole(1.8);
-    back(5.9)
+module key_part(side = TOP) {
+  custom_hole(3.2);
+  xflip_copy()
+    left(5.5)
+      custom_hole(1.5);
+  back(5.9)
+    contact_part();
+  back(3.8)
+    right(5)
       contact_part();
-    back(3.8)
-      right(5)
+  fwd(5.9)
+    left(3)
+      zrot(90)
         contact_part();
-  }
 }
 
 render()

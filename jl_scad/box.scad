@@ -1,6 +1,28 @@
 include <BOSL2/std.scad>
 include <reset_transform.scad>
-include <./prelude.scad>
+
+// all possible sides
+BOX_ALL = [LEFT, RIGHT, FRONT, BACK, BOTTOM, TOP];
+
+BOX_WALL_LEFT = 0;
+BOX_WALL_RIGHT = 1;
+BOX_WALL_FRONT = 2;
+BOX_WALL_BACK = 3;
+BOX_WALL_BOT = 4;
+BOX_WALL_TOP = 5;
+
+BOX_CUT_TAG = "box_remove";
+BOX_KEEP_TAG = "box_keep";
+//BOX_PREVIEW_TAG = "box_preview";
+
+// global settings
+$box_cut_color = "#977";
+$box_outside_color = "#ccc";
+$box_inside_color = "#a99";
+$box_preview_color = "#77f8";
+$box_inside_overlap = 0.0001;
+
+$box_wall = undef;
 
 // for any non-zero element b[i], return b[i] else a[i]
 function v_replace_nonzero(a, b) =
@@ -364,4 +386,3 @@ module box_cutout(p, rounding, chamfer, depth = 0, anchor = CENTER) {
         children(); // not sure if this is usable.
   }
 }
-

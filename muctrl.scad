@@ -3,45 +3,46 @@ use <./jl_scad/box.scad>
 use <./jl_scad/parts.scad>
 include <./jl_scad/prelude.scad>
 
-USB_RECT = rect([9, 3.4], chamfer = 0.5, anchor = BOT);
-MU_SIZE = [18, 22.52];
-PCB_TH = 1.3;
+USB_RECT = rect([9, 3.7], chamfer = 0.5, anchor = TOP);
+MU_SIZE = [18, 23.5];
+PCB_TH = 1.6;
 
 module mupart(standoff) {
   box_half(BOT, inside = true)
-    box_pos(BOT, FRONT)
-      back(standoff)
-        box_cutout(USB_RECT, depth = 5);
+    box_pos(BOT, RIGHT)
+      back(standoff - PCB_TH)
+        box_cutout(USB_RECT, chamfer = 1);
   box_half(BOT, inside = true)
-    box_pos(BOT + FRONT, BOT) {
-      xflip_copy()
-        left(MU_SIZE.x / 2) {
-          back(MU_SIZE.y / 2) {
-            W = 3;
-            TH = 3;
-            SLOT = 2;
+    box_pos(BOT + RIGHT, BOT)
+      zrot(90) {
+        xflip_copy()
+          left(MU_SIZE.x / 2) {
+            //back(MU_SIZE.y / 2) {
+            //  W = 3;
+            //  TH = 3;
+            //  SLOT = 2;
+            //
+            //  right(SLOT)
+            //    cube([W, TH, standoff - PCB_TH], anchor = BOT + FRONT + RIGHT)
+            //      position(TOP + LEFT)
+            //        cube([W - SLOT, TH, PCB_TH], anchor = BOT + LEFT);
+            //}
+            back(MU_SIZE.y) {
+              W = 3;
+              TH = 3;
+              SLOT = 0.75;
 
-            right(SLOT)
-              cube([W, TH, standoff - PCB_TH], anchor = BOT + FRONT + RIGHT)
-                position(TOP + LEFT)
-                  cube([W - SLOT, TH, PCB_TH], anchor = BOT + LEFT);
+              fwd(SLOT)
+                cube([W, TH, standoff - PCB_TH], anchor = BOT + FRONT + LEFT) {
+                  position(TOP + BACK)
+                    cube([W, TH - SLOT, PCB_TH], anchor = BACK + BOT);
+                  position(TOP + BACK)
+                    up(PCB_TH)
+                      cuboid([W, TH - SLOT / 2, PCB_TH], anchor = BACK + BOT, chamfer = SLOT / 2, edges = [FRONT + TOP, FRONT + BOTTOM]);
+                }
+            }
           }
-          back(MU_SIZE.y) {
-            W = 3;
-            TH = 2;
-            SLOT = 1;
-
-            fwd(SLOT)
-              cube([W, TH, standoff - PCB_TH], anchor = BOT + FRONT + LEFT) {
-                position(TOP + BACK)
-                  cube([W, TH - SLOT, PCB_TH], anchor = BACK + BOT);
-                position(TOP + BACK)
-                  up(PCB_TH)
-                    cuboid([W, TH - SLOT / 2, PCB_TH], anchor = BACK + BOT, chamfer = SLOT / 2, edges = [FRONT + TOP, FRONT + BOTTOM]);
-              }
-          }
-        }
-    }
+      }
 }
 
 render()

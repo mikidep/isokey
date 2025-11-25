@@ -38,7 +38,6 @@ keyboard.matrix = MatrixScanner(
 )
 
 keyboard.modules.append(Layers())
-keyboard.extensions.append(MidiKeys())
 
 # State
 transpose = 60
@@ -53,14 +52,18 @@ def compute_note(row, col, octave):
     return lowest_note + 12 * octave + row * generator_row + col * generator_col
 
 
-def MidiKey(row, col, octave=0):
+def MidiNoteKey(note):
     def key_on_press(key, keyboard, *args, **kwargs):
-        midi_output.send(NoteOn(compute_note(row, col, octave), 127, channel=None))
+        midi_output.send(NoteOn(note, 127, channel=None))
 
     def key_on_release(key, keyboard, *args, **kwargs):
-        midi_output.send(NoteOff(compute_note(row, col, octave), 127, channel=None))
+        midi_output.send(NoteOff(note, 127, channel=None))
 
     return Key(on_press=key_on_press, on_release=key_on_release)
+
+
+def GridKey(row, col, octave=0):
+    return MidiNoteKey(compute_note(row, col, octave))
 
 
 def simple_key_builder(f):
@@ -76,32 +79,22 @@ def simple_key_builder(f):
     return builder
 
 
-# SetGeneratorRowKey = simple_key_builder(lambda value: generator_row = value)
-# SetGeneratorColKey = simple_key_builder(lambda value: generator_col = value)
-# TransposeKey = simple_key_builder(lambda value: transpose += value)
 MidiCC = simple_key_builder(
     lambda value: midi_output.send(ControlChange(value, channel=None))
 )
 
-MK = MidiKey
+GK = GridKey
 
 # fmt: off
 keyboard.keymap = [
     [
-        MK(0, 0), MK(0, 1), MK(0, 2), MK(0, 3), MK(0, 4), KC.NO,
-        MK(1, 0), MK(1, 1), MK(1, 2), MK(1, 3), MK(1, 4), KC.MO(1),
-        # KC.MO(1),
+        GK(0, 0), GK(0, 1), GK(0, 2), GK(0, 3), GK(0, 4), KC.NO,
+        GK(1, 0), GK(1, 1), GK(1, 2), GK(1, 3), GK(1, 4), KC.MO(1),
     ],
         [
-        MK(0, 0, 1), MK(0, 1, 1), MK(0, 2, 1), MK(0, 3, 1), MK(0, 4, 1), KC.NO,
-        MK(1, 0, 1), MK(1, 1, 1), MK(1, 2, 1), MK(1, 3, 1), MK(1, 4, 1), KC.NO,
-        # KC.MO(1),
+        GK(0, 0, 1), GK(0, 1, 1), GK(0, 2, 1), GK(0, 3, 1), GK(0, 4, 1), KC.NO,
+        GK(1, 0, 1), GK(1, 1, 1), GK(1, 2, 1), GK(1, 3, 1), GK(1, 4, 1), KC.NO,
     ],
-    # [
-    #     TransposeKey(1), TransposeKey(-1), MidiCC(2),
-    #     SetGeneratorRowKey(1), SetGeneratorRowKey(2), SetGeneratorRowKey(3),
-    #     SetGeneratorColKey(1), SetGeneratorColKey(2), SetGeneratorColKey(3),
-    # ],
 ]
 # fmt: on
 

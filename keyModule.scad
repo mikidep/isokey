@@ -15,7 +15,7 @@ module custom_hole(d) {
   box_cutout(p);
 }
 
-module key_part(side = TOP) {
+module key_part(side = TOP) up(0.001) {
   custom_hole(3.2);
   xflip_copy()
     left(5.5)
@@ -34,7 +34,9 @@ module key_part(side = TOP) {
 render()
   box_make(halves = [TOP])
     box_shell_base_lid([20, 20, 0], walls_outside = true, rim_height = 0, rtop = 0) {
-      box_pos()
-        //move(tile_size / 2)
-        key_part();
+      box_half(TOP, inside = false)
+        box_pos() {
+          //move(tile_size / 2)
+          key_part();
+        }
     }

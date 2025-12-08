@@ -18,16 +18,28 @@ from adafruit_midi.stop import Stop
 keyboard = KMKKeyboard()
 
 keyboard.row_pins = (
-    board.IO9,
-    board.IO10,
+    board.GP3,
+    board.GP4,
+    board.GP5,
+    board.GP6,
+    board.GP7,
+    board.GP8,
+    board.GP9,
+    board.GP10,
+    board.GP11,
 )
 keyboard.col_pins = (
-    board.IO1,
-    board.IO2,
-    board.IO3,
-    board.IO4,
-    board.IO5,
-    board.IO6,
+    board.GP12,
+    board.GP13,
+    board.GP14,
+    board.GP15,
+    board.GP16,
+    board.GP17,
+    board.GP18,
+    board.GP19,
+    board.GP20,
+    board.GP21,
+    board.GP22,
 )
 keyboard.diode_orientation = DiodeOrientation.COL2ROW
 keyboard.matrix = MatrixScanner(
@@ -41,7 +53,7 @@ keyboard.modules.append(Layers())
 
 # State
 transpose = 60
-generator_row = 1
+generator_row = 7
 generator_col = 2
 lowest_note = 48
 
@@ -55,9 +67,11 @@ def compute_note(row, col, octave):
 def MidiNoteKey(note):
     def key_on_press(key, keyboard, *args, **kwargs):
         midi_output.send(NoteOn(note, 127, channel=None))
+        print("NOTE:", note)
 
     def key_on_release(key, keyboard, *args, **kwargs):
         midi_output.send(NoteOff(note, 127, channel=None))
+        print("RELEASE ", note)
 
     return Key(on_press=key_on_press, on_release=key_on_release)
 
@@ -87,14 +101,17 @@ GK = GridKey
 
 # fmt: off
 keyboard.keymap = [
-    [
-        GK(0, 0), GK(0, 1), GK(0, 2), GK(0, 3), GK(0, 4), KC.NO,
-        GK(1, 0), GK(1, 1), GK(1, 2), GK(1, 3), GK(1, 4), KC.MO(1),
-    ],
-        [
-        GK(0, 0, 1), GK(0, 1, 1), GK(0, 2, 1), GK(0, 3, 1), GK(0, 4, 1), KC.NO,
-        GK(1, 0, 1), GK(1, 1, 1), GK(1, 2, 1), GK(1, 3, 1), GK(1, 4, 1), KC.NO,
-    ],
+    []
+    + [KC.NO] + [ GK(0, i) for i in range(10) ] \
+    + [ GK(1, i-1) for i in range(11) ] \
+    + [KC.NO] + [ GK(2, i-1) for i in range(10) ] \
+    + [ GK(3, i-2) for i in range(11) ] \
+    + [KC.NO] + [ GK(4, i-2) for i in range(10) ] \
+    + [ GK(5, i-3) for i in range(11) ] \
+    + [KC.NO] + [ GK(6, i-3) for i in range(10) ] \
+    + [ GK(7, i-4) for i in range(11) ] \
+    + [KC.NO] + [ GK(8, i-4) for i in range(10) ] \
+    ,
 ]
 # fmt: on
 

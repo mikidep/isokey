@@ -1,4 +1,4 @@
-import board
+import boardiso
 import usb_midi
 
 from kmk.bootcfg import bootcfg

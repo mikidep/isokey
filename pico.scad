@@ -1,30 +1,72 @@
 include <./prelude.scad>
 use <./jl_scad/box.scad>
 use <./jl_scad/parts.scad>
+use <./contactModule100.scad>
 include <./jl_scad/prelude.scad>
 
 BW = 21; // Board width (connector side)
 BL = 51; // Board length
 ISW = 11.4; // Inter-screw width
-SO = 2; // Distance between connector edge and center of top screws
-ISL = BL - 2 * SO; // Inter-screw length
-USBE = 1.3; // USB socket excess length
+PRW = 17.78; // Pin rectangle width
+PRL = 48.26; // Pin rectangle length
+MARGIN = 4;
+PITCH = 0.1 * INCH;
+NPINS_SIDE = 20;
 
-// Screw hole: M2
+function pico_extra_h() =
+  BW + 2 * MARGIN;
 
-CONNTH = 2.5;
-CONNW = 8;
+function pico_l() = BL;
+module pico_ftp() box_half(TOP, inside = false)
+  box_pos(BACK + RIGHT) {
+    fwd(MARGIN)
+      left($box_wall + 0.2)
+        #cube([51, 21, 3], anchor = BACK + RIGHT + BOT);
+  }
 
-// Connector is placed on the Y+ face
-function pico_ftp(anchor = TOP, spin = 0) =
-  square([BW, BL], anchor = anchor, spin = spin);
+module pico_socket() box_half(TOP, inside = false)
+  box_pos(BACK + RIGHT)
+    fwd(MARGIN)
+      left($box_wall + 1.2)
+        left_half(x = 0.5)
+          fwd(BW / 2)
+            yflip_copy()
+              left((BL - PRL) / 2)
+                back(BW / 2 - (BW - PRW) / 2)
+                  for(i = [0:NPINS_SIDE - 1])
+                    left(i * PITCH) {
+                      contact_part(blade = false);
+                    }
 
-function pico_scrws(anchor = TOP, spin = 0) =
-  let (p = square([ISW, ISL], anchor = CENTER))
-    reorient(anchor, spin, two_d = true, size = [BW, BL], p = p);
+module pico_hole() box_half(TOP, inside = false)
+  box_pos(BACK + RIGHT + TOP)
+    down(1)
+      fwd(MARGIN + BW / 2)
+        box_cut() {
+          cube([6, 8.5, 4.5], anchor = TOP + RIGHT);
+          left($box_wall + 0.4)
+            cube([BL, BW, 4.5], anchor = TOP + RIGHT);
 
-A = TOP;
-S = -90;
+        }
 
-region(pico_ftp(anchor = A, spin = S));
-debug_pts(pico_scrws(anchor = A, spin = S));
+
+
+
+module mybox() {
+  box_size = [ //
+  PITCH * NPINS_SIDE + 20, //
+  25, 15 //
+  ];
+  box_shell_base_lid(box_size, rtop = 0, rbot = 0, rsides = 2, rim_height = 0, k = 0.5, wall_top = PLATE_TH)
+    children();
+}
+
+module main() box_make(halves = [TOP, BOT], print = true)
+  mybox() {
+    pico_socket();
+    pico_hole();
+  }
+
+
+render()
+  main();

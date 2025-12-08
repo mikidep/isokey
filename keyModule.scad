@@ -4,11 +4,6 @@ use <./jl_scad/box.scad>
 use <./jl_scad/parts.scad>
 include <./jl_scad/prelude.scad>
 
-module contact_part() {
-  contactPos();
-  box_cut()
-    contactHole();
-}
 
 module custom_hole(d) {
   p = square([d, d], anchor = CENTER);
@@ -32,11 +27,10 @@ module key_part(side = TOP) up(0.001) {
 }
 
 render()
-  box_make(halves = [TOP])
-    box_shell_base_lid([20, 20, 0], walls_outside = true, rim_height = 0, rtop = 0) {
+  box_make(halves = [TOP], print = true)
+    box_shell_base_lid([20, 20, 0], walls_outside = true, rim_height = 0, rtop = 0, wall_top = PLATE_TH) {
       box_half(TOP, inside = false)
         box_pos() {
-          //move(tile_size / 2)
           key_part();
         }
     }

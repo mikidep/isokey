@@ -52,7 +52,6 @@ keyboard.matrix = MatrixScanner(
 keyboard.modules.append(Layers())
 
 # State
-transpose = 60
 generator_row = 7
 generator_col = 2
 lowest_note = 48
@@ -60,44 +59,70 @@ lowest_note = 48
 midi_output = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
 
 
-def compute_note(row, col, octave):
-    return lowest_note + 12 * octave + row * generator_row + col * generator_col
+def compute_note(row, col):
+    def lazynote():
+        global lowest_note, generator_row, generator_col
+        return lowest_note + row * generator_row + col * generator_col
+
+    return lazynote
 
 
-def MidiNoteKey(note):
+def LazyMidiNoteKey(lazynote):
     def key_on_press(key, keyboard, *args, **kwargs):
+        note = lazynote()
         midi_output.send(NoteOn(note, 127, channel=None))
         print("NOTE:", note)
 
     def key_on_release(key, keyboard, *args, **kwargs):
+        note = lazynote()
         midi_output.send(NoteOff(note, 127, channel=None))
         print("RELEASE ", note)
 
     return Key(on_press=key_on_press, on_release=key_on_release)
 
 
+def TransposeKey(offset):
+    def key_on_press(key, keyboard, *args, **kwargs):
+        global lowest_note
+        lowest_note += offset
+
+    return Key(on_press=key_on_press)
+
+
+def ChangeRowStepKey(offset):
+    def key_on_press(key, keyboard, *args, **kwargs):
+        global generator_row
+        generator_row += offset
+
+    return Key(on_press=key_on_press)
+
+
+def ChangeColStepKey(offset):
+    def key_on_press(key, keyboard, *args, **kwargs):
+        global generator_col
+        generator_col += offset
+
+    return Key(on_press=key_on_press)
+
+
+def SetLayoutKey(rowgen, colgen):
+    def key_on_press(key, keyboard, *args, **kwargs):
+        global generator_row, generator_col
+        generator_row = rowgen
+        generator_col = colgen
+
+    return Key(on_press=key_on_press)
+
+
 def GridKey(row, col, octave=0):
-    return MidiNoteKey(compute_note(row, col, octave))
+    return LazyMidiNoteKey(compute_note(row, col))
 
-
-def simple_key_builder(f):
-    def builder(*builder_args):
-        def key_on_press(key, keyboard, *args, **kwargs):
-            f(*builder_args)
-
-        def key_on_release(key, keyboard, *args, **kwargs):
-            pass
-
-        return Key(on_press=key_on_press, on_release=key_on_release)
-
-    return builder
-
-
-MidiCC = simple_key_builder(
-    lambda value: midi_output.send(ControlChange(value, channel=None))
-)
 
 GK = GridKey
+TK = TransposeKey
+CRK = ChangeRowStepKey
+CCK = ChangeColStepKey
+SLK = SetLayoutKey
 
 # fmt: off
 keyboard.keymap = [
@@ -110,10 +135,17 @@ keyboard.keymap = [
     + [ GK(5, i-3) for i in range(11) ] \
     + [KC.NO] + [ GK(6, i-3) for i in range(10) ] \
     + [ GK(7, i-4) for i in range(11) ] \
-    + [KC.NO] + [ GK(8, i-4) for i in range(10) ] \
+    + [KC.MO(1)] + [ GK(8, i-4) for i in range(10) ] \
     ,
+    [
+        KC.NO, TK(-12), TK(+12), TK(-1), TK(+1),
+        CRK(-1), CRK(+1), CCK(-1), CCK(+1),
+        SLK(1, 2), # Janko
+        SLK(7, 2), # Wicki-Hayden
+    ] + [KC.NO for _ in range(100)]
 ]
 # fmt: on
 
 if __name__ == "__main__":
     keyboard.go()
+

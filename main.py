@@ -46,7 +46,7 @@ keyboard.matrix = MatrixScanner(
     row_pins=keyboard.row_pins,
     column_pins=keyboard.col_pins,
     columns_to_anodes=keyboard.diode_orientation,
-    interval=0.03,
+    interval=0.001,
 )
 
 keyboard.modules.append(Layers())
@@ -54,7 +54,7 @@ keyboard.modules.append(Layers())
 # State
 generator_row = 7
 generator_col = 2
-lowest_note = 48
+lowest_note = 33
 
 midi_output = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
 
@@ -148,4 +148,3 @@ keyboard.keymap = [
 
 if __name__ == "__main__":
     keyboard.go()
-

@@ -35,7 +35,7 @@ keyboard.matrix = MatrixScanner(
     row_pins=keyboard.row_pins,
     column_pins=keyboard.col_pins,
     columns_to_anodes=keyboard.diode_orientation,
-    # interval=0.03,
+    interval=0.005,
 )
 
 keyboard.modules.append(Layers())
@@ -179,13 +179,13 @@ HumanEditableMappingsSax = [
 
     # Controls
 
-    {"OCT": 0, "L": [1,0,0,0], "R": [0,0,0,0], "C": [1,0], "A": "O-"}, # Octave down
-    {"OCT": 0, "L": [0,1,0,0], "R": [0,0,0,0], "C": [1,0], "A": "T-"}, # Transpose down
-    {"OCT": 0, "L": [0,0,1,0], "R": [0,0,0,0], "C": [1,0], "A": "D-"}, # Delay down 5 milliseconds
+    {"OCT": 0, "L": [1,0,0,1], "R": [0,0,0,1], "C": [0,1], "A": "O-"}, # Octave down
+    {"OCT": 0, "L": [0,1,0,1], "R": [0,0,0,1], "C": [0,1], "A": "T-"}, # Transpose down
+    {"OCT": 0, "L": [0,0,1,1], "R": [0,0,0,1], "C": [0,1], "A": "D-"}, # Delay down 5 milliseconds
 
-    {"OCT": 0, "L": [0,0,0,0], "R": [1,0,0,0], "C": [1,0], "A": "O+"}, # Octave up
-    {"OCT": 0, "L": [0,0,0,0], "R": [0,1,0,0], "C": [1,0], "A": "T+"}, # Transpose up
-    {"OCT": 0, "L": [0,0,0,0], "R": [0,0,1,0], "C": [1,0], "A": "D+"}, # Delay up 5 milliseconds
+    {"OCT": 0, "L": [0,0,0,1], "R": [1,0,0,1], "C": [0,1], "A": "O+"}, # Octave up
+    {"OCT": 0, "L": [0,0,0,1], "R": [0,1,0,1], "C": [0,1], "A": "T+"}, # Transpose up
+    {"OCT": 0, "L": [0,0,0,1], "R": [0,0,1,1], "C": [0,1], "A": "D+"}, # Delay up 5 milliseconds
 
     # Copies with bis key
 

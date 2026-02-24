@@ -318,8 +318,6 @@ clock = digitalio.DigitalInOut(board.D12)
 clock.direction = digitalio.Direction.OUTPUT
 
 hx711 = HX711(data, clock)
-channel_a = AnalogIn(hx711, HX711.CHAN_A_GAIN_64)
-channel_b = AnalogIn(hx711, HX711.CHAN_B_GAIN_32)
 
 SENSOR_BASELINE = 548608 # 11111111111101111010000100000000
 
@@ -337,7 +335,7 @@ GLOBAL_D = 1
 def Breath():
     global GLOBAL_D
     t1 = time.monotonic()
-    reading = channel_a.value
+    reading =  hx711.read(chan_gain=HX711.CHAN_A_GAIN_64)
     n = abs(convert_number(reading))
     pct = (n - MIN_VALUE) / (CAPPED_VALUE - MIN_VALUE)
     t2 = time.monotonic()

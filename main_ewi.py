@@ -321,7 +321,7 @@ hx711 = HX711(data, clock)
 
 SENSOR_BASELINE = 548608 # 11111111111101111010000100000000
 
-CAPPED_VALUE = 700_000
+CAPPED_VALUE = 1_000_000
 MIN_VALUE = 20_000
 
 CC_MIDI_CHANNEL = 7
@@ -375,14 +375,14 @@ def PollFunction():
     t2 = time.monotonic()
 
     BREATH = Breath()
-    print(f"Time between poll functions: {(t2 - GLOBAL_T1) * 1000:6} time between breath readings: {GLOBAL_D * 1000:6}")
+    # print(f"Time between poll functions: {(t2 - GLOBAL_T1) * 1000:6} time between breath readings: {GLOBAL_D * 1000:6}")
     GLOBAL_T1 = t2
     if BREATH == 0.0:
         midi_stop_everything()
     else:
         midi_play_note(ACTION_NOTE)
         midi_send_breath(BREATH)
-        print(f"Breath: {BREATH:.2f}")
+        # print(f"Breath: {BREATH:.2f}")
 
     keyboard.set_timeout(callback=PollFunction, after_ticks=BREATH_POLLING_INTERVAL)
 

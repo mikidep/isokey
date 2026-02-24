@@ -1,4 +1,3 @@
-import boardiso
 import usb_midi
 
 from kmk.bootcfg import bootcfg
@@ -10,6 +9,7 @@ bootcfg(
     cdc_console=False,
     keyboard=False,
     consumer_control=False,
-    usb_id=("Ultima", "Keyboard"),
+    usb_id=("Ultima", "EWI"),
 )
+
 usb_midi.enable()

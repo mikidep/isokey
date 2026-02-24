@@ -2,6 +2,7 @@ import board
 import adafruit_midi
 import usb_midi
 import digitalio
+import time
 
 from kmk.kmk_keyboard import KMKKeyboard
 from kmk.scanners.keypad import MatrixScanner
@@ -54,86 +55,6 @@ class Mapping:
 def midi_to_key_name(midi_note: int) -> str:
     note_names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
     return f"{note_names[midi_note % 12]}{midi_note // 12}"
-
-# -----------------------------------
-
-TICKING_INTERVAL = 1
-KEY_STATE = { 'OCT': False, 'L1': False, 'L2': False, 'L3': False, 'L4': False, 'R1': False, 'R2': False, 'R3': False, 'R4': False, 'C2': False, 'C1': False, }
-CURRENT_NOTE = None
-NOTE_DELAY_TASK = None
-NOTE_DELAY = 1
-TRANSPOSE = 0
-OCTAVE = 0
-# Syncronization variable
-ACTION_NOTE = None
-OUTPUT = None
-BREATH = 0.0
-
-# -----------------------------------
-
-data = digitalio.DigitalInOut(board.D13)
-data.direction = digitalio.Direction.INPUT
-
-clock = digitalio.DigitalInOut(board.D12)
-clock.direction = digitalio.Direction.OUTPUT
-
-hx711 = HX711(data, clock)
-channel_a = AnalogIn(hx711, HX711.CHAN_A_GAIN_64)
-channel_b = AnalogIn(hx711, HX711.CHAN_B_GAIN_32)
-
-SENSOR_BASELINE = 548608 # 11111111111101111010000100000000
-
-CAPPED_VALUE = 700_000
-MIN_VALUE = 80_000
-
-CC_MIDI_CHANNEL = 7
-
-def convert_number(u):
-    u &= 0xFFFFFF
-    return (u - 0x1000000 if u & 0x800000 else u) + SENSOR_BASELINE
-
-def Breath():
-    reading = channel_a.value
-    n = abs(convert_number(reading))
-    pct = (n - MIN_VALUE) / (CAPPED_VALUE - MIN_VALUE)
-    return max(0.0, min(1.0, pct))
-
-# -----------------------------------
-
-# Stop everything
-def midi_stop_everything():
-    global CURRENT_NOTE, MidiOutput
-    if CURRENT_NOTE is not None:
-        MidiOutput.send(NoteOff(CURRENT_NOTE, 127, channel=None))
-    CURRENT_NOTE = None
-
-# Play the note. Stop the previous one if needed
-def midi_play_note(new_note: int):
-    global CURRENT_NOTE, MidiOutput
-    if new_note != CURRENT_NOTE:
-        if new_note is not None:
-            MidiOutput.send(NoteOn(new_note, 127, channel=None))
-        if CURRENT_NOTE is not None:
-            MidiOutput.send(NoteOff(CURRENT_NOTE, 127, channel=None))
-    CURRENT_NOTE = new_note
-
-def v01_to_midi(val01: int) -> int:
-    # Map breath value 0.0 .. 1.0 to CC value (0-127).
-    return int(127 * val01)
-
-def midi_send_breath(val01: int):
-    MidiOutput.send(ControlChange(CC_MIDI_CHANNEL, v01_to_midi(val01), channel=None))
-
-def PollFunction():
-    global ACTION_NOTE, MidiOutput
-    breath = Breath()
-    if breath == 0.0:
-        midi_stop_everything()
-    else:
-        print(f"Breath: {breath}")
-        midi_play_note(ACTION_NOTE)
-        midi_send_breath(breath)
-    keyboard.set_timeout(callback=PollFunction, after_ticks=TICKING_INTERVAL)
 
 # -----------------------------------
 
@@ -376,6 +297,99 @@ MidiOutput = adafruit_midi.MIDI(midi_out=usb_midi.ports[1], out_channel=0)
 
 # -----------------------------------
 
+KEY_STATE = { 'OCT': False, 'L1': False, 'L2': False, 'L3': False, 'L4': False, 'R1': False, 'R2': False, 'R3': False, 'R4': False, 'C2': False, 'C1': False, }
+CURRENT_NOTE = None
+NOTE_DELAY_TASK = None
+NOTE_DELAY = 2
+BREATH_POLLING_INTERVAL = 5
+TRANSPOSE = 0
+OCTAVE = 0
+# Syncronization variable
+ACTION_NOTE = None
+OUTPUT = None
+BREATH = 0.0
+
+# -----------------------------------
+
+data = digitalio.DigitalInOut(board.D13)
+data.direction = digitalio.Direction.INPUT
+
+clock = digitalio.DigitalInOut(board.D12)
+clock.direction = digitalio.Direction.OUTPUT
+
+hx711 = HX711(data, clock)
+channel_a = AnalogIn(hx711, HX711.CHAN_A_GAIN_64)
+channel_b = AnalogIn(hx711, HX711.CHAN_B_GAIN_32)
+
+SENSOR_BASELINE = 548608 # 11111111111101111010000100000000
+
+CAPPED_VALUE = 700_000
+MIN_VALUE = 20_000
+
+CC_MIDI_CHANNEL = 7
+
+def convert_number(u):
+    u &= 0xFFFFFF
+    return (u - 0x1000000 if u & 0x800000 else u) + SENSOR_BASELINE
+
+GLOBAL_D = 1
+
+def Breath():
+    global GLOBAL_D
+    t1 = time.monotonic()
+    reading = channel_a.value
+    n = abs(convert_number(reading))
+    pct = (n - MIN_VALUE) / (CAPPED_VALUE - MIN_VALUE)
+    t2 = time.monotonic()
+    GLOBAL_D = t2 - t1
+    return max(0.0, min(1.0, pct))
+
+# -----------------------------------
+
+def midi_stop_everything():
+    global CURRENT_NOTE, MidiOutput
+    if CURRENT_NOTE is not None:
+        MidiOutput.send(NoteOff(CURRENT_NOTE, 127, channel=None))
+    CURRENT_NOTE = None
+
+# Play the note. Stop the previous one if needed
+def midi_play_note(new_note: int):
+    global CURRENT_NOTE, MidiOutput
+    if new_note != CURRENT_NOTE:
+        if new_note is not None:
+            MidiOutput.send(NoteOn(new_note, 127, channel=None))
+        if CURRENT_NOTE is not None:
+            MidiOutput.send(NoteOff(CURRENT_NOTE, 127, channel=None))
+    CURRENT_NOTE = new_note
+
+def v01_to_midi(val01: int) -> int:
+    # Map breath value 0.0 .. 1.0 to CC value (0-127).
+    return int(127 * val01)
+
+def midi_send_breath(val01: int):
+    MidiOutput.send(ControlChange(CC_MIDI_CHANNEL, v01_to_midi(val01), channel=None))
+
+GLOBAL_T1 = time.monotonic()
+
+def PollFunction():
+    global BREATH, ACTION_NOTE, MidiOutput
+    global GLOBAL_D, GLOBAL_T1
+    t2 = time.monotonic()
+
+    BREATH = Breath()
+    print(f"Time between poll functions: {(t2 - GLOBAL_T1) * 1000:6} time between breath readings: {GLOBAL_D * 1000:6}")
+    GLOBAL_T1 = t2
+    if BREATH == 0.0:
+        midi_stop_everything()
+    else:
+        midi_play_note(ACTION_NOTE)
+        midi_send_breath(BREATH)
+        print(f"Breath: {BREATH:.2f}")
+
+    keyboard.set_timeout(callback=PollFunction, after_ticks=BREATH_POLLING_INTERVAL)
+
+# -----------------------------------
+
 def get_action(ks) -> int | None:
     for mapping in Mappings:
         if is_key_state_equal(ks, mapping.key_state):
@@ -390,6 +404,7 @@ def actual_key_change():
         ACTION_NOTE = None
     elif type(action) == int:
         ACTION_NOTE = get_note(action)
+    midi_play_note(ACTION_NOTE)
 
 def on_key_change():
     global KEY_STATE, NOTE_DELAY_TASK, TRANSPOSE, OCTAVE, NOTE_DELAY
@@ -439,8 +454,14 @@ keyboard.keymap = [
 # fmt: on
 
 if __name__ == "__main__":
+    print("----------------------------------------------------------------------")
     print("EWI ready.")
+    print("  NOTE_DELAY = {} ms".format(NOTE_DELAY))
+    print("  BREATH_POLLING_INTERVAL = {} ms".format(BREATH_POLLING_INTERVAL))
+    print("  CAPPED_VALUE = {}".format(CAPPED_VALUE))
+    print("  MIN_VALUE    = {}".format(MIN_VALUE))
+    print("----------------------------------------------------------------------")
     # Schedule the non-threaded central poll loop via KMK timeouts
-    keyboard.set_timeout(callback=PollFunction, after_ticks=TICKING_INTERVAL)
+    keyboard.set_timeout(callback=PollFunction, after_ticks=BREATH_POLLING_INTERVAL)
     # Start the keyboard main loop (blocks)
     keyboard.go()

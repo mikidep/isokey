@@ -16,8 +16,7 @@ from adafruit_midi.control_change import ControlChange
 from adafruit_midi.channel_pressure import ChannelPressure
 from kmk.utils import Debug
 
-from adafruit_hx711.analog_in import AnalogIn
-from adafruit_hx711.hx711 import HX711
+from hx711 import HX711
 
 debug = Debug('kmk.keyboard')
 
@@ -317,7 +316,7 @@ data.direction = digitalio.Direction.INPUT
 clock = digitalio.DigitalInOut(board.D12)
 clock.direction = digitalio.Direction.OUTPUT
 
-hx711 = HX711(data, clock)
+hx711 = HX711(data, clock, HX711.CHAN_A_GAIN_64)
 
 SENSOR_BASELINE = 548608 # 11111111111101111010000100000000
 
@@ -375,7 +374,7 @@ def PollFunction():
     t2 = time.monotonic()
 
     BREATH = Breath()
-    # print(f"Time between poll functions: {(t2 - GLOBAL_T1) * 1000:6} time between breath readings: {GLOBAL_D * 1000:6}")
+    print(f"Time between poll functions: {(t2 - GLOBAL_T1) * 1000:6} time between breath readings: {GLOBAL_D * 1000:6}, breath: {BREATH:.2f}")
     GLOBAL_T1 = t2
     if BREATH == 0.0:
         midi_stop_everything()
